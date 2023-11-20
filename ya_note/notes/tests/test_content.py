@@ -2,6 +2,7 @@ from django.contrib.auth import get_user_model
 from django.test import Client, TestCase
 from django.urls import reverse
 
+from notes.forms import NoteForm
 from notes.models import Note
 
 
@@ -25,30 +26,28 @@ class TestContent(TestCase):
             author=cls.user,
         )
         cls.author_client = Client()
+        cls.author_client.force_login(cls.author)
         cls.list_url = reverse('notes:list')
-        cls.add_url = reverse('notes:add')
-        cls.list_url = reverse('notes:list')
-
-#    def test_anonymous_client_has_no_note_list(self):
-#        response = self.client.get(self.list_url)
-#        self.assertEqual([], response.context['object_list'])
-
-#    def test_anonymous_client_has_no_form(self):
-#        response = self.client.get(self.add_url)
-#        self.assertNotIn('form', response.context)
 
     def test_authorized_client_has_form(self):
-        self.client.force_login(self.author)
-        response = self.client.get(self.add_url)
-        self.assertIn('form', response.context)
+        urls = (
+            ('notes:add', None),
+            ('notes:edit', (self.note_author.slug,)),
+        )
+        for url, args in urls:
+            with self.subTest(url=url, args=args):
+                url_with_form = reverse(url, args=args)
+                response = self.author_client.get(url_with_form)
+                self.assertIn('form', response.context)
+                self.assertIsInstance(response.context['form'], NoteForm)
 
     def test_add_note_to_note_list(self):
-        self.author_client.force_login(self.author)
         response = self.author_client.get(self.list_url)
         self.assertIn(self.note_author, response.context['object_list'])
 
     def test_author_can_see_only_his_own_notes(self):
-        self.author_client.force_login(self.author)
         response = self.author_client.get(self.list_url)
         self.assertContains(response, self.note_author.title)
         self.assertNotContains(response, self.note_user.title)
+        user_note = Note.objects.filter(author=self.user)
+        self.assertNotIn(user_note, response.context['object_list'])
