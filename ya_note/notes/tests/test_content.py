@@ -47,7 +47,5 @@ class TestContent(TestCase):
 
     def test_author_can_see_only_his_own_notes(self):
         response = self.author_client.get(self.list_url)
-        self.assertContains(response, self.note_author.title)
-        self.assertNotContains(response, self.note_user.title)
-        user_note = Note.objects.filter(author=self.user)
-        self.assertNotIn(user_note, response.context['object_list'])
+        self.assertIn(self.note_author, response.context['object_list'])
+        self.assertNotIn(self.note_user, response.context['object_list'])

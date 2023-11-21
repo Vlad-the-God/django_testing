@@ -46,6 +46,7 @@ class TestNoteCreation(TestCase):
         self.assertEqual(new_note.title, self.form_data['title'])
         self.assertEqual(new_note.text, self.form_data['text'])
         self.assertEqual(new_note.slug, slugify(self.form_data['title']))
+        self.assertEqual(new_note.author, self.author)
 
     def test_empty_slug_forms_from_title(self):
         self.auth_client.post(self.url, self.form_data)
@@ -54,7 +55,7 @@ class TestNoteCreation(TestCase):
 
     def test_note_slug_cant_repeate(self):
         start_notes_count = Note.objects.count()
-        self.form_data['slug'] = 'slug',
+        self.form_data['slug'] = 'slug'
         response = self.auth_client.post(self.url, self.form_data)
         self.assertFormError(
             response,
